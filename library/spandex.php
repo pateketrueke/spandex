@@ -10,16 +10,16 @@ class Spandex
   /**#@+
    * @ignore
    */
-  
+
   // tag name
-  protected $tag = '';
-  
+  protected $tag = 'TEXT';
+
   // nodes data
   protected $node = array();
-  
+
   // node attributes
   protected $attrs = array();
-  
+
   /**#@-*/
 
 
@@ -34,30 +34,32 @@ class Spandex
   final public function __construct($tag, $args = array())
   {
     static $fulltag = '([a-z][a-z0-9:-]*)([^>]*)';
-    
-    
+
+
     if (preg_match("/^.*<$fulltag>(.*?)<\/\\1>.*$/Uis", $tag, $match))
     {
       $this->tag = strtolower($match[1]);
-      $args = $this->_fetchArgs($match[2]);
+      $test = $this->_fetchArgs($match[2]);
       $this->node []= new self($match[3]);
     }
     elseif (preg_match("/^\s*<$fulltag\/>\s*$/", $tag, $match))
     {
       $this->tag = strtolower($match[1]);
-      $args = $this->_fetchArgs($match[2]);
+      $test = $this->_fetchArgs($match[2]);
     }
     else
     {
-      $args = array();
+      $test = array();
       $this->tag = 'TEXT';
       $this->node []= $tag;
     }
-    
-    $this->_fillProps( ! is_array($args) ? $this->_fetchArgs($args) : $args);
+
+    $args = ! is_array($args) ? $this->_fetchArgs($args) : $args;
+
+    $this->_fillProps(array_merge($test, $args));
   }
-  
-  
+
+
   /**
    * Clone current object
    *
@@ -88,12 +90,12 @@ class Spandex
   final public function removeNode()
   {
     $this->emptyNode();
-    
+
     $this->tag = '';
     $this->attrs = array();
   }
 
-  
+
   /**
    * Sub nodes count
    *
@@ -116,7 +118,7 @@ class Spandex
   {
     $old = new self($tag, $args);
     $new = $this->cloneNode();
-    
+
     $this->attrs = array();
 
     $this->node = $old->node;
@@ -124,7 +126,7 @@ class Spandex
 
     $this->tag = $old->tag;
     $this->_fillProps($old->attrs);
-    
+
     return $new;
   }
 
@@ -137,7 +139,7 @@ class Spandex
   final public function unWrap()
   {
     $this->tag = 'TEXT';
-    
+
     return $this;
   }
 
@@ -151,7 +153,7 @@ class Spandex
   final public function appendTo($node)
   {
     $node->append($this);
-    
+
     return $this;
   }
 
@@ -165,7 +167,7 @@ class Spandex
   final public function append($node)
   {
     $this->node []= $node;
-    
+
     return $this;
   }
 
@@ -179,7 +181,7 @@ class Spandex
   final public function prependTo($node)
   {
     $node->prepend($this);
-    
+
     return $this;
   }
 
@@ -194,7 +196,7 @@ class Spandex
   {
     $key = (sizeof($this->node) + 1) * -1;
     $this->node[$key] = $node;
-    
+
     return $this;
   }
 
@@ -208,14 +210,14 @@ class Spandex
   final public function eq($num)
   {
     $inc = 0;
-    
+
     foreach (array_keys($this->node) as $index)
     {
       if ( ! is_object($this->node[$index]))
       {
         continue;
       }
-      
+
       if ($num === $inc)
       {
         return $this->node[$index];
@@ -240,7 +242,7 @@ class Spandex
       {
         continue;
       }
-      
+
       if (func_num_args() !== 1)
       {
         $this->attrs[$key] = $value;
@@ -258,11 +260,11 @@ class Spandex
         $this->attr($k, $v);
       }
     }
-    
+
     return $this;
   }
-  
-  
+
+
   /**
    * Data attributes
    *
@@ -276,7 +278,7 @@ class Spandex
     {
       $this->attrs['data'] = array();
     }
-    
+
     if (is_array($key))
     {
       $this->attrs['data'] += $key;
@@ -285,7 +287,7 @@ class Spandex
     {
       $this->attrs['data'][$key] = $value;
     }
-    
+
     return $this;
   }
 
@@ -302,10 +304,10 @@ class Spandex
     {
       return strip_tags($this->_buildText($this->node, FALSE));
     }
-    
+
     $this->node = array();
     $this->node []= htmlspecialchars((string) $value);
-    
+
     return $this;
   }
 
@@ -322,10 +324,10 @@ class Spandex
     {
       return $this->_buildText($this->node, TRUE);
     }
-    
+
     $this->node = array();
     $this->node []= $value;
-    
+
     return $this;
   }
 
@@ -343,18 +345,18 @@ class Spandex
     {
       $test  = array();
       $style = explode(';', $this->attr('style'));
-      
+
       foreach (array_map('trim', $style) as $rule)
       {
         $syntax = array_map('trim', explode(':', $rule));
-        
+
         if ($prop === $syntax[0])
         {
           return ! empty($syntax[1]) ? $syntax[1] : FALSE;
         }
         $test []= join(':', $syntax);
       }
-      
+
       if (func_num_args() === 2)
       {
         $test []= "$prop:$value";
@@ -368,7 +370,7 @@ class Spandex
         $this->css($k, $v);
       }
     }
-    
+
     return $this;
   }
 
@@ -382,13 +384,13 @@ class Spandex
   final public function addClass($name)
   {
     $args = func_get_args();
-    
+
     $set = $this->_fetchClasses();
     $test = $this->_fetchClasses($args);
 
     $set = array_unique(array_merge($set, $test));
     $this->attr('class', join(' ', $set));
-    
+
     return $this;
   }
 
@@ -403,20 +405,20 @@ class Spandex
   {
     $args = func_get_args();
     $set = $this->_fetchClasses();
-    
+
     foreach ($this->_fetchClasses($args) as $one)
     {
       $key = array_search($one, $set);
-      
+
       if ($key !== FALSE)
       {
         unset($set[$key]);
       }
     }
-    
+
     $set = array_unique(array_filter($set));
     $this->attr('class', join(' ', $set));
-    
+
     return $this;
   }
 
@@ -437,7 +439,7 @@ class Spandex
     {
       $this->addClass($name);
     }
-    
+
     return $this;
   }
 
@@ -446,10 +448,16 @@ class Spandex
   /**#@+
    * @ignore
    */
-  
+
   // dynamic attributes setter
   final public function __call($method, array $args = array())
   {
+    if ( ! $args)
+    {
+      return $this->attr($method);
+    }
+
+
     if (sizeof($args) > 1)
     {
       $this->attr($method, $args);
@@ -458,14 +466,14 @@ class Spandex
     {
       $this->attr($method, array_shift($args));
     }
-    
+
     return $this;
   }
-  
+
   // build html output
   final public function __toString()
   {
-    static $tags = array(
+    static $close = array(
               'img',
               'base',
               'link',
@@ -476,16 +484,16 @@ class Spandex
               'track',
               'area',
             );
-    
-    
+
+
     $num = func_num_args();
     $single = ! ($num > 0 && func_get_arg(0));
-    
+
     if ($num === 0)
     {
       $single = TRUE;
     }
-    
+
 
     $attrs = $this->_buildAtts($this->attrs);
     $str = $this->_buildText($this->node, !! $single);
@@ -499,26 +507,33 @@ class Spandex
       return FALSE;
     }
 
-        
+
     $out = '';
 
-    if (in_array($this->tag, $tags))
+    if (in_array($this->tag, $close))
     {
       $out .= "<{$this->tag}$attrs/>\n";
     }
     else
-    {// TODO: indent better..
-      //$str = preg_replace('/^/m', ' ', $str);
+    {
+      $str = preg_replace('/^/m', $this->tag === 'pre' ? '<!--#PRE#-->' : ' ', $str);
       $out .= "<{$this->tag}$attrs>\n$str\n</{$this->tag}>\n";
     }
-    
-    $out = preg_replace('/<([\w:-]+)([^<>]*)>\s*([^<>]+?)\s*<\/\\1>/', '<\\1\\2>\\3</\\1>', $out);
-    $out = preg_replace('/<(a|pre)([^<>]*)>\s*(.+?)\s*<\/\\1>/', '<\\1\\2>\\3</\\1>', $out);
+
+
+    if ( ! $num)
+    {
+      $out = preg_replace('/^\s*<!--#PRE#-->/m', '', $out);
+      $out = str_replace('<!--#PRE#-->', '', $out);
+    }
+
+    $out = preg_replace('/<([\w:-]+)([^<>]*)>\s*([^<>]+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
+    $out = preg_replace('/<(a|pre)([^<>]*)>\s*(.+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
     $out = preg_replace('/[\r\n]+(?=<)/m', "\n", $out);
-    
+
     return $out;
   }
-  
+
   // arguments from attributes string
   final protected function _fetchArgs($text)
   {
@@ -527,9 +542,9 @@ class Spandex
           . '([\'"])?(.*?)(?(2)\\2)\s*'
           . '(?:(?=\w+\s*=)|\s*$)\s*/';
 
-          
+
     preg_match_all($expr, rtrim($text, '/'), $match);
-    
+
     foreach ($match[1] as $i => $key)
     {
       $val = htmlspecialchars($match[3][$i]);
@@ -538,7 +553,7 @@ class Spandex
     }
     return $out;
   }
-  
+
   // retrieve node classes
   final protected function _fetchClasses($test = '')
   {
@@ -553,10 +568,10 @@ class Spandex
 
     $test = array_unique(array_map('trim', $test));
     $test = array_filter($test);
-    
+
     return $test;
   }
-  
+
   // assemble dynamic attributes
   final protected function _buildAtts($args)
   {
@@ -566,21 +581,21 @@ class Spandex
       $expr .= '(?:[\.,]?([\s\d\.,a-z_-]+))?';
       $expr .= '(?:@([^"]+))?/i';
 
-      
+
       preg_match_all($expr, $args, $match);
-      
+
       $args = array();
 
       if ( ! empty($match[1][0]))
       {
         $args['id'] = $match[1][0];
       }
-      
+
       if ( ! empty($match[2][0]))
       {
         $args['class'] = strtr($match[2][0], ',.', ' ');
       }
-      
+
       if ( ! empty($match[3][0]))
       {
         foreach (explode('@', $match[3][0]) as $one)
@@ -593,9 +608,9 @@ class Spandex
       }
     }
 
-    
+
     $out = array('');
-    
+
     foreach ((array) $args as $key => $value)
     {
         $key = preg_replace('/[^a-zA-Z:-]/', '', $key);
@@ -621,33 +636,33 @@ class Spandex
           foreach ($value as $k => $v)
           {
             $v = htmlspecialchars( ! is_string($v) ? json_encode($v) : $v);
-            
+
             $out []= strtolower("$key-$k") . '="' . $v . '"';
           }
           continue;
         }
-        
+
         $out []= strtolower($key) . '="' . htmlspecialchars($value) . '"';
     }
-    
+
     $out = join(' ', $out);
-    
+
     return $out;
   }
-  
+
   // retrieve the current node text
   final protected function _buildText($set, $re)
   {
     $out = '';
-    
+
     ksort($set);
-    
+
     foreach ($set as $key => $val)
     {
       if (is_object($val))
       {
         $out .= $val->__toString( ! $re);
-        
+
         if ($re !== TRUE)
         {
           break;
@@ -660,7 +675,7 @@ class Spandex
     }
     return $out;
   }
-  
+
   // assign the node attributes
   final protected function _fillProps($set)
   {
@@ -672,9 +687,9 @@ class Spandex
       }
     }
   }
-  
+
   /**#@-*/
-  
+
 }
 
 /* EOF: ./spandex.php */
