@@ -523,12 +523,12 @@ class Spandex
 
     if ( ! $num)
     {
+      $out = preg_replace('/<([\w:-]+)([^<>]*)>\s*([^<>]+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
+      $out = preg_replace('/<(a|pre)([^<>]*)>\s*(.+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
       $out = preg_replace('/^\s*<!--#PRE#-->/m', '', $out);
       $out = str_replace('<!--#PRE#-->', '', $out);
     }
 
-    $out = preg_replace('/<([\w:-]+)([^<>]*)>\s*([^<>]+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
-    $out = preg_replace('/<(a|pre)([^<>]*)>\s*(.+?)\s*<\/\\1>/s', '<\\1\\2>\\3</\\1>', $out);
     $out = preg_replace('/[\r\n]+(?=<)/m', "\n", $out);
 
     return $out;
